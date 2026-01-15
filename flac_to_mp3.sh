@@ -29,7 +29,7 @@ echo
 
 mapfile -t FILES < <(find "$SRC_DIR" -type f -iname "*.flac")
 
-if [ ${FILES[0]} -eq 0 ]; then
+if [ "${FILES[0]}" -eq 0 ]; then
   echo "No hay archivos flac en este directorio"
   exit 0
 fi
