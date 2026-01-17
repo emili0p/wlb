@@ -44,8 +44,8 @@ selected=$(echo "$games" | fzf \
   --prompt="Steam >" \
   --with-nth=2 \
   --delimiter=$'\t' \
-  --height=40% \
   --border)
+echo "$games" | wc -l
 
 [ -z "$selected" ] && exit 0
 
