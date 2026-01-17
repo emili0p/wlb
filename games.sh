@@ -45,7 +45,6 @@ selected=$(echo "$games" | fzf \
   --with-nth=2 \
   --delimiter=$'\t' \
   --border)
-echo "$games" | wc -l
 
 [ -z "$selected" ] && exit 0
 
