@@ -6,6 +6,60 @@
 # y lanzarlos desde la terminal
 # requieres fzf y steam
 
+INSTALL_DIR="$HOME/.local/bin"
+SCRIPT_NAME="gamerunner"
+TARGET="$INSTALL_DIR/$SCRIPT_NAME"
+VERSION=1.0
+SCRIPT_PATH="$(realpath "$0")"
+
+if [[ "$1" == "install" ]]; then
+  echo "Instalando $SCRIPT_NAME…"
+
+  mkdir -p "$INSTALL_DIR" || exit 1
+
+  echo "Copiando desde: $SCRIPT_PATH"
+  echo "Copiando hacia: $TARGET"
+
+  if ! cp "$SCRIPT_PATH" "$TARGET"; then
+    echo "ERROR: no se pudo copiar el script"
+    exit 1
+  fi
+
+  chmod +x "$TARGET"
+
+  echo "Instalado correctamente como $TARGET"
+  exit 0
+fi
+
+if [[ "$1" == "uninstall" ]]; then
+  rm -f "$HOME/.local/bin/gamerunner"
+  echo "Se ha desinstalado gamerunner"
+  exit 0
+fi
+
+if [[ "$1" == "-v" || "$1" == "--version" ]]; then
+  echo "$VERSION"
+  exit 0
+fi
+
+if [[ "$1" == "-h" || "$1" == "--help " ]]; then
+  cat <<EOF
+gamerunner es un lanzador de juegos de steam desde la clit
+
+uso:
+  gamerunner        Ejecuta el launcher
+  gamerunner install    installa en ~/.local/bin/
+  gamerunner uninstall   Desinstala el launcher
+
+Require de 
+  - steam
+  - fzf
+
+EOF
+  exit 0
+fi
+
+# logica
 STEAM_DIR=$(realpath "$HOME/.steam/steam" 2>/dev/null)
 if [ ! -d "$STEAM_DIR/steamapps" ]; then
   echo "No se encontró el directorio real de Steam"
