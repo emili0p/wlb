@@ -59,13 +59,30 @@ EOF
   exit 0
 fi
 
-# logica
-STEAM_DIR=$(realpath "$HOME/.steam/steam" 2>/dev/null)
-if [ ! -d "$STEAM_DIR/steamapps" ]; then
-  echo "No se encontró el directorio real de Steam"
+get_steam_libraries() {
+  local vdf="$HOME/.steam/steam/steamapps/libraryfolders.vdf"
+  [ -f "$vdf" ] || return 1
+
+  grep '"path"' "$vdf" |
+    sed -E 's/.*"path"[[:space:]]+"([^"]+)".*/\1/'
+}
+
+get_steamapps_dirs() {
+  get_steam_libraries | while read -r lib; do
+    [ -d "$lib/steamapps" ] && echo "$lib/steamapps"
+  done
+}
+
+APPS_DIRS=()
+
+while read -r lib; do
+  [ -d "$lib/steamapps" ] && APPS_DIRS+=("$lib/steamapps")
+done < <(get_steam_libraries)
+
+if [ "${#APPS_DIRS[@]}" -eq 0 ]; then
+  echo "No se encontraron librerías de Steam"
   exit 1
 fi
-APPS_DIR="$STEAM_DIR/steamapps"
 
 command -v fzf >/dev/null || {
   echo "fzf no esta instalado"
@@ -73,20 +90,15 @@ command -v fzf >/dev/null || {
 }
 
 command -v steam >/dev/null || {
-  echo "fzf no esta instalado"
+  echo "steam no esta instalado"
   exit 1
 }
 
-[ -d "$APPS_DIR" ] || {
-  echo "no se encontro el directorio de steam"
-  exit 1
-}
-
-# extraer datos
 games=$(
-  grep -R '"name"' "$APPS_DIR"/appmanifest_*.acf 2>/dev/null |
-    sed -E 's|.*/appmanifest_([0-9]+)\.acf:.*"name"[[:space:]]+"([^"]+)"|\1\t\2|' |
-    sort -k2
+  for dir in "${APPS_DIRS[@]}"; do
+    grep '"name"' "$dir"/appmanifest_*.acf 2>/dev/null |
+      sed -E 's|.*/appmanifest_([0-9]+)\.acf:.*"name"[[:space:]]+"([^"]+)"|\1\t\2|'
+  done | sort -k2 -u
 )
 
 [ -z "$games" ] && {
