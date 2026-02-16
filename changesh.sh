@@ -25,10 +25,6 @@ done </etc/shells
 for i in "${!SHELLS[@]}"; do
   printf "%d) %s\n" $((i + 1)) "${SHELLS[$i]}"
 done
-for i in "${!SHELLS[@]}"; do
-  printf "%d) %s\n" $((i + 1)) "${SHELLS[$1]}"
-done
-
 echo
 read -rp "Select shell number you want to use: " OPTION
 if ! [[ "$OPTION" =~ ^[0-9]+$ ]] || [ "$OPTION" -lt 1 ] || [ "$OPTION" -gt "${#SHELLS[@]}" ]; then
