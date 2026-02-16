@@ -40,7 +40,7 @@ SELECTED_SHELL="${SHELLS[$((OPTION - 1))]}"
 echo
 echo "selectec shell: $SELECTED_SHELL"
 
-# backuo just in case!
+# backup just in case!
 cp "$KITTY_CONF" "$KITTY_CONF.bak"
 
 if grep -q "^shell " "KITTY_CONF"; then
