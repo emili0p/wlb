@@ -39,12 +39,9 @@ echo "selectec shell: $SELECTED_SHELL"
 # backup just in case!
 cp "$KITTY_CONF" "$KITTY_CONF.bak"
 
-if grep -q "^shell " "KITTY_CONF"; then
-  sed -i "s|^shell .*|shell $SELECTED_SHELL|" "$KITTY_CONF"
-else
-  echo "shell $SELECTED_SHELL" >>"$KITTY_CONF"
-fi
+sed -i '/^shell /d' "$KITTY_CONF"
 
+echo "shell $SELECTED_SHELL" >>"$KITTY_CONF"
 echo
 echo "Done, Kitty.conf updated"
 echo "backup created at Kitty.conf.bak"
