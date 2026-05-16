@@ -6,7 +6,6 @@ set -euo pipefail
 
 MUSIC_DIR="$HOME/Música"
 
-clear
 show_banner() {
 
   local cols
@@ -27,13 +26,33 @@ pause() {
   echo
   read -rp "Presione ENTER para continuar..."
 }
-
 sanitize() {
   echo "$1" |
     sed 's#[/:*?"<>|]#-#g' |
     sed 's/^ *//;s/ *$//'
 }
-
+help() {
+  echo
+  echo
+  echo "Este script organiza tu musica localmente"
+  echo
+  echo "hace lo siguiente:"
+  echo "- Escanea archivos en: $MUSIC_DIR"
+  echo "- lee metadata con ffmpeg (album y año)"
+  echo "- crea carpetas tipo:"
+  echo "  xxxx - nombre del album"
+  echo "- mueve automaticamente los archivos"
+  echo "- el modo dry te deja visualizar como quedara y que archivos movera"
+  echo "- el modo uno hara lo que el modo dry de manera efectiva una ves este seguro"
+  echo "- siempre recomendamos correr dry antes de organizar para poder detectar si es correcto"
+  echo
+  echo "no descarga musica ni modifica audio"
+  echo "solo reorganiza archivos existentes"
+  echo
+  echo "soporta: mp3, flac, ogg, m4a, wav"
+  echo
+  pause
+}
 organize_music() {
 
   echo
@@ -155,19 +174,12 @@ dry_run() {
 
 while true; do
 
-  clear
   show_banner
-
+  echo "1) Organizar musica"
+  echo "2) previsualiazacion (dry run)"
+  echo "3) Ayuda"
+  echo "4) Salir"
   echo
-  echo "=================================================="
-  echo "              ORGANIZADOR DE MUSICA"
-  echo "=================================================="
-  echo
-  echo "1) Organizar música"
-  echo "2) Simulación (dry run)"
-  echo "3) Salir"
-  echo
-
   read -rp "Seleccione una opción: " option
 
   case "$option" in
@@ -185,9 +197,13 @@ while true; do
     dry_run
     pause
     ;;
-
   3)
     clear
+    show_banner
+    help
+    ;;
+
+  4)
 
     cowsay -f tux "Adios y disfrute su musica :)"
 
