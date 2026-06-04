@@ -13,8 +13,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
+NC='\033[0m'
 # counters for files
 total_copiados=0
 total_existentes=0
@@ -65,7 +64,7 @@ echo "Destino: $REMOTE_HOST:$REMOTE_DIR"
 echo ""
 
 # buscar imagenes
-find "$LOCAL_DIR" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.bmp" -o -iname "*.webp" -o -iname "*.svg" -o -iname "*.tiff" \) | while read -r archivo; do
+while IFS= read -r archivo; do
   relativo="${archivo#$HOME/}"
   size=$(stat -f%z "$archivo" 2>/dev/null || stat -c%s "$archivo" 2>/dev/null)
   size_human=$(human_size $size)
@@ -111,7 +110,7 @@ find "$LOCAL_DIR" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png"
       echo -e "${RED}[ERROR]${NC} Falló la copia de $archivo"
     fi
   fi
-done
+done < <(find "$LOCAL_DIR" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.bmp" -o -iname "*.webp" -o -iname "*.svg" -o -iname "*.tiff" \))
 
 echo ""
 echo -e "${BLUE}=== Resumen ===${NC}"
