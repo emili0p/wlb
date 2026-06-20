@@ -5,5 +5,5 @@ por lo que le encuentro tantos usos para hacer pequeñas cosas tontas, mecanicas
 # Requisitos
 - zsh o bash 
 - muchos archivos requieren cosas externas
-
+- linux
 
