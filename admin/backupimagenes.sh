@@ -117,3 +117,5 @@ echo -e "${BLUE}=== Resumen ===${NC}"
 echo -e "Archivos nuevos copiados: $total_copiados"
 echo -e "Archivos ya existentes: $total_existentes"
 echo -e "Total transferido: $(human_size $total_bytes)"
+
+# this can be optimized using only 2 ssh conections
