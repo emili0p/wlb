@@ -33,79 +33,73 @@ human_size() {
   fi
 }
 
-get_unique_name() {
-  local remote_path="$1"
-  local dir=$(dirname "$remote_path")
-  local base=$(basename "$remote_path")
-  local name="${base%.*}"
-  local ext="${base##*.}"
-  local counter=1
-
-  # Si es archivo sin extensión
-  if [ "$name" = "$base" ]; then
-    ext=""
-  fi
-
-  while ssh -n "$REMOTE_HOST" "[ -f \"$dir/$name${ext:+.}$ext\" ]" 2>/dev/null; do
-    name="${base%.*}-$counter"
-    ((counter++))
-  done
-
-  if [ $counter -gt 1 ]; then
-    echo "$dir/$name${ext:+.}$ext"
-  else
-    echo ""
-  fi
-}
-
-echo -e "${BLUE}=== backup  ===${NC}"
 echo "Origen: $LOCAL_DIR"
 echo "Destino: $REMOTE_HOST:$REMOTE_DIR"
 echo ""
 
-# buscar imagenes
+echo "Obteniendo información de archivos remotos..."
+remote_files=$(ssh "$REMOTE_HOST" "find '$REMOTE_DIR' -type f -exec stat -c '%n|%s' {} \;" 2>/dev/null)
+
+# Procesar archivos locales
 while IFS= read -r archivo; do
   relativo="${archivo#$HOME/}"
   size=$(stat -f%z "$archivo" 2>/dev/null || stat -c%s "$archivo" 2>/dev/null)
   size_human=$(human_size $size)
 
-  # check si existe en remoto
-  if ssh -n "$REMOTE_HOST" "[ -f \"$relativo\" ]" 2>/dev/null; then
-    # get tamaño remoto
-    remote_size=$(ssh -n "$REMOTE_HOST" "stat -c%s \"$relativo\" 2>/dev/null" 2>/dev/null)
+  # Buscar archivo en la lista remota
+  remote_entry=$(echo "$remote_files" | grep "^$relativo|")
+
+  if [ -n "$remote_entry" ]; then
+    remote_size=$(echo "$remote_entry" | cut -d'|' -f2)
 
     if [ "$size" = "$remote_size" ]; then
       echo -e "${GREEN}[EXISTE]${NC} $relativo ($size_human) - idéntico"
       ((total_existentes++))
     else
-      # si mismo nombre =/  tamaño diferente = renombrar
       echo -e "${YELLOW}[DIFERENTE]${NC} $relativo ($size_human local / $(human_size $remote_size) remoto)"
-      nuevo_nombre=$(get_unique_name "$relativo")
 
-      if [ -n "$nuevo_nombre" ]; then
-        echo -e "${YELLOW}[RENOMBRANDO]${NC} a: $nuevo_nombre"
+      dir=$(dirname "$relativo")
+      base=$(basename "$relativo")
+      name="${base%.*}"
+      ext="${base##*.}"
 
-        ssh -n "$REMOTE_HOST" "mkdir -p \"$(dirname "$nuevo_nombre")\"" 2>/dev/null
+      if [ "$name" = "$base" ]; then
+        ext=""
+      fi
 
-        if scp -q "$archivo" "$REMOTE_HOST:$nuevo_nombre"; then
-          echo -e "${GREEN}[COPIADO]${NC} $nuevo_nombre ($size_human)"
-          ((total_copiados++))
-          total_bytes=$((total_bytes + size))
-        else
-          echo -e "${RED}[ERROR]${NC} Falló la copia de $archivo"
-        fi
+      counter=1
+      nuevo_relativo="$dir/$name${ext:+.}$ext"
+
+      while echo "$remote_files" | grep -q "^$nuevo_relativo|"; do
+        nuevo_relativo="$dir/$name-$counter${ext:+.}$ext"
+        ((counter++))
+      done
+
+      echo -e "${YELLOW}[RENOMBRANDO]${NC} a: $nuevo_relativo"
+
+      ssh "$REMOTE_HOST" "mkdir -p '$(dirname "$nuevo_relativo")'" 2>/dev/null
+
+      if scp -q "$archivo" "$REMOTE_HOST:$nuevo_relativo"; then
+        echo -e "${GREEN}[COPIADO]${NC} $nuevo_relativo ($size_human)"
+        ((total_copiados++))
+        ((total_renombrados++))
+        total_bytes=$((total_bytes + size))
+        remote_files="$remote_files"$'\n'"$nuevo_relativo|$size"
+      else
+        echo -e "${RED}[ERROR]${NC} Falló la copia de $archivo"
       fi
     fi
   else
     echo -e "${BLUE}[NUEVO]${NC} $relativo ($size_human)"
 
-    ssh -n "$REMOTE_HOST" "mkdir -p \"$(dirname "$relativo")\"" 2>/dev/null
+    ssh "$REMOTE_HOST" "mkdir -p '$(dirname "$relativo")'" 2>/dev/null
 
-    # Copiar archivo
+    # copy za file
     if scp -q "$archivo" "$REMOTE_HOST:$relativo"; then
       echo -e "${GREEN}[COPIADO]${NC} $relativo ($size_human)"
       ((total_copiados++))
       total_bytes=$((total_bytes + size))
+      remote_files="$remote_files"$'\n'"$relativo|$size"
     else
       echo -e "${RED}[ERROR]${NC} Falló la copia de $archivo"
     fi
@@ -113,9 +107,6 @@ while IFS= read -r archivo; do
 done < <(find "$LOCAL_DIR" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.bmp" -o -iname "*.webp" -o -iname "*.svg" -o -iname "*.tiff" \))
 
 echo ""
-echo -e "${BLUE}=== Resumen ===${NC}"
 echo -e "Archivos nuevos copiados: $total_copiados"
 echo -e "Archivos ya existentes: $total_existentes"
 echo -e "Total transferido: $(human_size $total_bytes)"
-
-# this can be optimized using only 2 ssh conections
